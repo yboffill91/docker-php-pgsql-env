@@ -1,0 +1,57 @@
+services:
+  # 1. Servicio de Servidor Web (PHP Puro)
+  php-apache:
+    build:
+      context: ./apache-php # Usa el Dockerfile de la carpeta apache-php/
+      dockerfile: Dockerfile
+    container_name: dev_apache_server
+    ports:
+      - "81:80" # Mapea el puerto 80 del contenedor al puerto 81 de tu PC (localhost:81)
+    volumes:
+      # Mapeo de la carpeta htdocs de tu WSL al DocumentRoot de Apache
+      # Asegúrate de que esta ruta sea correcta:
+      - /home/yasmany/dev_folder/php/htdocs:/var/www/html
+    networks:
+      - dev_network
+
+  # 2. Servicio CLI para Composer, Laravel y Symfony
+  php-cli-composer:
+    build:
+      context: ./cli-composer # Usa el Dockerfile de la carpeta cli-composer/
+      dockerfile: Dockerfile
+    container_name: dev_php_cli
+    volumes:
+      # Mapeo de la carpeta de proyectos. Esto permite ejecutar comandos CLI
+      # (composer install, php artisan) sobre tus proyectos.
+      - /home/yasmany/dev_folder/php:/usr/src/app
+    working_dir: /usr/src/app
+    # No expone puertos, solo es para usar por CLI (docker compose exec...)
+    networks:
+      - dev_network
+    
+  # 3. Servicio de Base de Datos PostgreSQL
+  postgres_db:
+    image: postgres:15-alpine # Imagen ligera de PostgreSQL
+    container_name: dev_postgres_db
+    restart: always
+    ports:
+      - "5433:5432" # Mapea el puerto 5432 del contenedor al puerto 5433 de tu PC (localhost:5433)
+    environment:
+      # Credenciales Requeridas
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: Adminl0cal.
+      # Crea una base de datos por defecto al iniciar (opcional)
+      POSTGRES_DB: dev_database
+    volumes:
+      # Almacenamiento persistente de los datos de la DB
+      - dev_postgres_data:/var/lib/postgresql/data
+    networks:
+      - dev_network
+
+# Definición de la Red y Volúmenes
+networks:
+  dev_network:
+    driver: bridge
+
+volumes:
+  dev_postgres_data:
